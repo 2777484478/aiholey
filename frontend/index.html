@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aiholey · AI 代码审计平台</title>
+<link rel="stylesheet" href="/static/style.css?v=7" />
+</head>
+<body>
+<div class="bg-orbs"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+<div class="grid-bg"></div>
+
+<div class="app">
+  <!-- ============ 侧栏 ============ -->
+  <aside class="sidebar">
+    <div class="side-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#04121f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2.5 4 6.2v5.4c0 4.6 3.2 8.7 8 9.9 4.8-1.2 8-5.3 8-9.9V6.2z"/><path d="m8.6 12.1 2.3 2.3 4.5-4.6"/>
+        </svg>
+      </div>
+      <div class="logo-txt"><b>Aiholey</b><span>Code Audit</span></div>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item active" data-view="dashboard">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
+        <span>仪表盘</span></a>
+      <a class="nav-item" data-view="repos">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13.5"/><path d="M4 19.5A2 2 0 0 1 6 17.5h14"/><path d="M9 8.5h6"/></svg>
+        <span>仓库管理</span></a>
+      <a class="nav-item" data-view="tasks">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 11 13.5 15.5 9"/><rect x="3.5" y="4" width="17" height="16.5" rx="2.5"/><path d="M8 4V2.8M16 4V2.8"/></svg>
+        <span>审计任务</span></a>
+      <a class="nav-item" data-view="reports">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/><path d="M9 13h6M9 17h4"/></svg>
+        <span>审计报告</span></a>
+      <a class="nav-item" data-view="monitor">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6h5"/></svg>
+        <span>执行引擎</span></a>
+      <a class="nav-item" data-view="skills">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7l8 4 8-4z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></svg>
+        <span>技能库</span></a>
+      <a class="nav-item" data-view="quick">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+        <span>快速扫描</span></a>
+      <a class="nav-item" data-view="webscan">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>
+        <span>Web 漏洞扫描</span></a>
+      <a class="nav-item" data-view="engines">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 7l2.6 1.5M17.2 15.5l2.6 1.5M4.2 17l2.6-1.5M17.2 8.5l2.6-1.5"/></svg>
+        <span>模型设置</span></a>
+      <a class="nav-item" data-view="about">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.4"/></svg>
+        <span>系统与账户</span></a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="engine-pill" id="enginePill" title="当前默认引擎">
+        <i class="dot"></i><span id="enginePillText">加载中…</span>
+      </div>
+      <div class="user-box">
+        <div class="avatar" id="avatar">A</div>
+        <div class="user-meta"><b id="userName">-</b><span id="userRole">管理员</span></div>
+        <button class="icon-btn" id="logoutBtn" title="退出登录">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="pageTitle">仪表盘</h1>
+        <p id="pageSub">漏洞总览与仓库风险排行</p>
+      </div>
+      <div class="topbar-right" id="topActions"></div>
+    </header>
+
+    <div class="content">
+      <!-- ---------- 仪表盘 ---------- -->
+      <section class="view active" id="view-dashboard">
+        <div class="stat-row" id="statRow"></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>漏洞趋势（近 7 天）</h3><span class="tag" id="trendTag">—</span></div>
+            <div class="chart-box"><canvas id="chartTrend"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>严重等级分布</h3></div>
+            <div class="chart-box"><canvas id="chartDonut"></canvas></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>漏洞分类分布</h3></div>
+            <div class="chart-box"><canvas id="chartBars"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>仓库风险排名</h3><a class="link" data-goto="reports">查看全部报告 →</a></div>
+            <div class="table-wrap sm"><table id="riskTable"><thead><tr>
+              <th>#</th><th>仓库</th><th>风险</th><th>严重</th><th>高危</th><th>中危</th><th>合计</th>
+            </tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>最近完成的审计</h3><a class="link" data-goto="reports">查看全部 →</a></div>
+          <div class="table-wrap sm"><table id="recentTable"><thead><tr>
+            <th>运行 ID</th><th>任务 / 仓库</th><th>状态</th><th>漏洞</th><th>耗时</th><th>完成时间</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 仓库管理 ---------- -->
+      <section class="view" id="view-repos">
+        <div class="card">
+          <div class="toolbar">
+            <input class="inp" id="repoSearch" placeholder="仓库名称" style="width:200px" />
+            <select class="inp sel" id="repoStatusFilter">
+              <option value="">状态：全部</option><option value="active">active</option><option value="inactive">inactive</option>
+            </select>
+            <button class="btn ghost" id="repoSearchBtn">查询</button>
+            <button class="btn ghost" id="repoResetBtn">重置</button>
+            <div class="spacer"></div>
+            <button class="btn" id="repoAddBtn">+ 新增仓库</button>
+          </div>
+          <div class="table-wrap"><table id="repoTable"><thead><tr>
+            <th>名称</th><th>类型</th><th>仓库地址</th><th>分支</th><th>状态</th><th>最后拉取</th><th>操作</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 审计任务 ---------- -->
+      <section class="view" id="view-tasks">
+        <div class="card">
+          <div class="toolbar">
+            <input class="inp" id="taskSearch" placeholder="任务名称" style="width:180px" />
+            <select class="inp sel" id="taskRepoFilter"><option value="">仓库：全部</option></select>
+            <select class="inp sel" id="taskStatusFilter">
+              <option value="">状态：全部</option>
+              <option value="pending">待执行</option><option value="queued">排队中</option>
+              <option value="running">运行中</option><option value="success">完成</option>
+              <option value="failed">失败</option><option value="stopped">已停止</option>
+            </select>
+            <button class="btn ghost" id="taskSearchBtn">查询</button>
+            <button class="btn ghost" id="taskResetBtn">重置</button>
+            <div class="spacer"></div>
+            <button class="btn" id="taskAddBtn">+ 新增任务</button>
+          </div>
+          <div class="table-wrap"><table id="taskTable"><thead><tr>
+            <th>任务名称</th><th>仓库</th><th>深度</th><th>引擎</th><th>调度方式</th>
+            <th>状态</th><th>下次执行</th><th>最后执行</th><th>操作</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 审计报告 ---------- -->
+      <section class="view" id="view-reports">
+        <div class="stat-row compact" id="reportStatRow"></div>
+        <div class="card">
+          <div class="toolbar">
+            <input class="inp" id="reportSearch" placeholder="任务名称 / 报告内容" style="width:210px" />
+            <select class="inp sel" id="reportStatusFilter">
+              <option value="">状态：全部</option><option value="success">成功</option>
+              <option value="failed">失败</option><option value="running">运行中</option><option value="queued">排队中</option>
+            </select>
+            <select class="inp sel" id="reportSevFilter">
+              <option value="">风险：全部</option><option value="critical">含严重</option>
+              <option value="high">含高危</option><option value="medium">含中危</option>
+            </select>
+            <button class="btn ghost" id="reportSearchBtn">查询</button>
+            <button class="btn ghost" id="reportResetBtn">重置</button>
+            <div class="spacer"></div>
+            <span class="muted" id="reportSelCount"></span>
+            <button class="btn ghost" id="reportBatchDelBtn">批量删除</button>
+            <button class="btn ghost" id="exportSelectedBtn">批量导出</button>
+            <button class="btn ghost" id="exportAllBtn">导出汇总</button>
+          </div>
+          <div class="table-wrap"><table id="reportTable"><thead><tr>
+            <th style="width:34px"><input type="checkbox" id="checkAll" /></th>
+            <th>运行 ID</th><th>任务 / 仓库</th><th>深度</th><th>引擎</th><th>状态</th>
+            <th>漏洞统计</th><th>耗时</th><th>创建时间</th><th>操作</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 执行引擎 ---------- -->
+      <section class="view" id="view-monitor">
+        <div class="stat-row compact" id="monitorStatRow"></div>
+        <div class="card">
+          <div class="toolbar">
+            <label class="chk"><input type="checkbox" id="autoRefresh" checked /> 自动刷新（3s）</label>
+            <button class="btn ghost" id="refreshMonitor">立即刷新</button>
+            <div class="spacer"></div>
+            <span class="muted" id="monitorHint"></span>
+          </div>
+          <div class="table-wrap"><table id="monitorTable"><thead><tr>
+            <th>引擎</th><th>入口</th><th>PID</th><th>状态</th><th>执行时长</th>
+            <th>任务 / 仓库</th><th>运行 ID</th><th>深度</th><th>工作目录</th><th>错误</th><th>操作</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 技能库 ---------- -->
+      <section class="view" id="view-skills">
+        <div class="card">
+          <div class="toolbar">
+            <input class="inp" id="skillSearch" placeholder="技能名" style="width:200px" />
+            <select class="inp sel" id="skillCatFilter"><option value="">分类：全部</option></select>
+            <button class="btn ghost" id="skillSearchBtn">查询</button>
+            <button class="btn ghost" id="skillResetBtn">重置</button>
+            <div class="spacer"></div>
+            <button class="btn ghost" id="skillRestoreBtn">恢复内置提示词</button>
+            <button class="btn" id="skillAddBtn">+ 新增 Skill</button>
+          </div>
+          <div class="skill-grid" id="skillGrid"></div>
+        </div>
+      </section>
+
+      <!-- ---------- 快速扫描 ---------- -->
+      <section class="view" id="view-quick">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>扫描目标</h3></div>
+            <div class="form">
+              <div class="fi"><label>来源</label>
+                <select class="inp sel" id="quickSource">
+                  <option value="dir">服务器目录</option><option value="repo">已拉取的仓库</option>
+                </select></div>
+              <div class="fi" id="quickDirRow"><label>目录路径</label>
+                <div class="row"><input class="inp" id="quickPath" placeholder="/path/to/code" />
+                  <button class="btn ghost" id="quickBrowseBtn">浏览</button></div>
+                <div class="dirbox" id="dirBox" hidden></div></div>
+              <div class="fi" id="quickRepoRow" hidden><label>选择仓库</label>
+                <select class="inp sel" id="quickRepo"></select></div>
+              <div class="fi"><label>审计深度</label><select class="inp sel" id="quickDepth"></select></div>
+              <div class="fi"><label>扫描引擎</label><select class="inp sel" id="quickEngine">
+                <option value="codex">Codex</option><option value="claude">Claude Code</option></select></div>
+              <div class="fi"><label>参与技能（不选则用默认技能集）</label>
+                <select class="inp sel multi" id="quickSkills" multiple size="8"></select></div>
+              <button class="btn" id="quickRunBtn">开始扫描</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>扫描进度</h3><span class="tag" id="quickStage">未开始</span></div>
+            <div class="progress-wrap"><div class="progress"><i id="quickBar" style="width:0%"></i></div><span id="quickPct">0%</span></div>
+            <div class="logbox" id="quickLog"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- Web 漏洞扫描 ---------- -->
+      <section class="view" id="view-webscan">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>扫描目标</h3><span class="tag" id="wsCount">0 个目标</span></div>
+            <div class="form">
+              <div class="fi"><label>任务名称（可选）</label>
+                <input class="inp" id="wsName" placeholder="例如：生产站点外部暴露面检查" /></div>
+              <div class="fi"><label>目标站点（每行一个，最多 20 个）</label>
+                <textarea class="inp" id="wsTargets" rows="6"
+                  placeholder="https://example.com&#10;http://demo.example.com:8080&#10;example.org"></textarea>
+                <div class="muted">支持 http/https；不写协议时默认按 http 处理</div></div>
+              <div class="fi"><label>探测强度</label><select class="inp sel" id="wsDepth"></select></div>
+              <div class="fi"><label>AI 引擎</label><select class="inp sel" id="wsEngine"></select></div>
+              <div class="fi"><label>参与技能（不选则用全部内置检测项）</label>
+                <select class="inp sel multi" id="wsSkills" multiple size="6"></select></div>
+              <label class="chk"><input type="checkbox" id="wsAuthorized" />
+                我确认已获得以上站点的安全测试授权</label>
+              <button class="btn" id="wsRunBtn">开始扫描</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>扫描进度</h3><span class="tag" id="wsStage">未开始</span></div>
+            <div class="progress-wrap"><div class="progress"><i id="wsBar" style="width:0%"></i></div><span id="wsPct">0%</span></div>
+            <div class="muted" id="wsTargetsDone" style="margin:6px 0 8px"></div>
+            <div class="logbox" id="wsLog"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>扫描记录</h3>
+            <div class="head-acts">
+              <span class="muted" id="wsSelCount"></span>
+              <button class="btn ghost tiny" id="wsBatchDelBtn">批量删除</button>
+              <button class="btn ghost tiny" id="wsRefreshBtn">刷新</button>
+            </div></div>
+          <div class="table-wrap"><table id="wsTable"><thead><tr>
+            <th style="width:34px"><input type="checkbox" id="wsCheckAll" /></th>
+            <th>任务</th><th>目标</th><th>强度</th><th>状态</th>
+            <th>问题统计</th><th>耗时</th><th>创建时间</th><th>操作</th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ---------- 模型设置 ---------- -->
+      <section class="view" id="view-engines">
+        <div class="grid-2" id="engineCards"></div>
+        <div class="card">
+          <div class="card-head"><h3>扫描行为</h3></div>
+          <div class="kv" id="metaBox"></div>
+        </div>
+      </section>
+
+      <!-- ---------- 系统与账户 ---------- -->
+      <section class="view" id="view-about">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>修改密码</h3></div>
+            <div class="form">
+              <div class="fi"><label>原密码</label><input class="inp" type="password" id="oldPwd" /></div>
+              <div class="fi"><label>新密码（至少 8 位，需含字母与数字）</label><input class="inp" type="password" id="newPwd" /></div>
+              <div class="fi"><label>确认新密码</label><input class="inp" type="password" id="newPwd2" /></div>
+              <button class="btn" id="changePwdBtn">保存新密码</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>系统信息</h3></div>
+            <div class="kv" id="aboutBox"></div>
+          </div>
+        </div>
+
+        <!-- 登录安全：把认证机制和活跃会话摊开，用户能确认防护生效、也能主动踢掉可疑设备 -->
+        <div class="card">
+          <div class="card-head">
+            <h3>登录安全</h3>
+            <button class="btn ghost tiny" id="kickOthersBtn" title="注销除本机外的全部登录会话">退出其它设备</button>
+          </div>
+          <div class="kv" id="secBox"></div>
+          <div class="sess-list" id="secSessions"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ============ 通用弹窗 ============ -->
+<div class="modal-mask" id="modalMask" hidden>
+  <div class="modal" id="modal">
+    <div class="modal-head"><h3 id="modalTitle">标题</h3><button class="icon-btn" id="modalClose">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="drawer-mask" id="drawerMask" hidden>
+  <div class="drawer" id="drawer">
+    <div class="drawer-head"><div><h3 id="drawerTitle">详情</h3><p id="drawerSub"></p></div>
+      <button class="icon-btn" id="drawerClose">✕</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="/static/app.js?v=7"></script>
+</body>
+</html>

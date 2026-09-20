@@ -1,0 +1,27 @@
+# 构建上下文瘦身 + 防止把本机状态带进镜像
+.git
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+
+# 运行时数据（卷挂载提供，绝不进镜像）
+data
+docker-data
+
+# 本机环境/密钥
+.env
+.env.*
+!.env.example
+data/.jwt_secret
+
+# 开发辅助
+.workbuddy
+.claude
+*.log
+Dockerfile
+docker-compose.yml
+docker-deploy.sh
+.dockerignore
+README.md

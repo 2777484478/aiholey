@@ -1,0 +1,33 @@
+# Aiholey 一体化部署（本地 Mac Docker）
+# 用法：docker compose up -d --build    （或直接跑 ./docker-deploy.sh）
+services:
+  aiholey:
+    build:
+      context: .
+      # 本机网络受限，默认走国内镜像站；有外网的环境覆盖：
+      #   BASE_IMAGE=python:3.13-slim PIP_INDEX_URL=https://pypi.org/simple docker compose build
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-docker.m.daocloud.io/library/python:3.13-slim}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple/}
+    image: aiholey:latest
+    container_name: aiholey
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      # 首次启动创建的管理员账号（仅在数据库为空时生效）
+      AIHOLEY_USER: ${AIHOLEY_USER:-admin}
+      AIHOLEY_PASSWORD: ${AIHOLEY_PASSWORD:-admin123}
+      # http 部署下必须为 0，否则浏览器不收 cookie；上 https 反代后改 1
+      AIHOLEY_COOKIE_SECURE: "0"
+      TZ: Asia/Shanghai
+    volumes:
+      # 数据（SQLite / 报告 / 仓库 / JWT 密钥）持久化到项目旁的 docker-data/，
+      # 方便直接查看与备份；想换位置改左边即可
+      - ./docker-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/api/health',timeout=4).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3

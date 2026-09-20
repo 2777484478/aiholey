@@ -1,0 +1,23 @@
+# ---- 运行时数据（数据库 / 报告 / 扫描产物 / 克隆的仓库 / JWT 密钥），绝不入库 ----
+data/
+docker-data/
+
+# ---- 本地环境 ----
+.venv/
+venv/
+.env
+.DS_Store
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+
+# ---- 助手工作区 ----
+.workbuddy/
+.claude/
+
+# ---- 日志与临时文件 ----
+*.log
+*.pid
+/tmp/
