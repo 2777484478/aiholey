@@ -251,7 +251,8 @@ aiholey/
 ├── frontend/                 零依赖原生前端（HTML/CSS/JS，无构建步骤）
 ├── examples/                 示例仓库（demo-repo.git + demo-vuln），内置体验用
 ├── docs/                     界面截图
-├── Dockerfile                一体化镜像（非 root + 健康检查）
+├── Dockerfile                一体化镜像（入口降权非 root 运行 + 健康检查）
+├── docker-entrypoint.sh      容器入口：修正挂载卷属主后降权启动（Linux 权限兼容）
 ├── docker-compose.yml        单服务编排
 ├── docker-deploy.sh          一键部署：停旧实例→构建→迁移数据→起容器
 ├── requirements.txt
@@ -297,6 +298,22 @@ docker compose down && rm -rf docker-data && ./docker-deploy.sh
 
 能。未配置时自动降级为纯内置规则扫描：22 条审计正则 + 27 项 Web 只读探测照常工作，
 报告照常产出。配置 Key 后额外获得 AI 项目适配、语义分析和自主渗透规划。
+</details>
+
+<details>
+<summary><b>Linux 服务器上容器起不来，日志报 <code>Permission denied: '/app/data/repos'</code>？</b></summary>
+
+这是**旧版镜像**的问题：容器以非 root 运行，而 Linux 的 bind mount 保留宿主机属主
+（用 root 跑部署脚本时 `docker-data/` 是 root:root，容器用户写不进去）。
+macOS Docker Desktop 经 virtiofs 抹平了权限所以测不出来。
+
+**2026-09-21 之后的镜像已通过入口脚本自动修复**（root 起入口 → 修正属主 → 降权运行），
+拉最新代码重新构建即可：
+
+```bash
+git pull
+./docker-deploy.sh --rebuild
+```
 </details>
 
 <details>

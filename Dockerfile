@@ -40,22 +40,26 @@ RUN pip install -i ${PIP_INDEX_URL} -r requirements.txt
 
 COPY backend ./backend
 COPY frontend ./frontend
-COPY start.sh stop.sh ./
+COPY start.sh stop.sh docker-entrypoint.sh ./
 
 # 数据目录（SQLite / 报告 / 仓库克隆 / JWT 密钥）——运行时挂载卷持久化，
 # 镜像里只放占位。jwt_secret 首次启动自动生成在 data/.jwt_secret。
 RUN mkdir -p /app/data
 
-# 非 root 运行：容器被打穿时少一层权限
+# 非 root 应用用户。注意：不设 USER 指令——容器以 root 起入口脚本，
+# 由 docker-entrypoint.sh 修正挂载卷属主后用 runuser 降权到 aiholey 运行。
+# （Linux 宿主机 bind mount 保留宿主机属主，直接 USER aiholey 会写不进卷）
 RUN groupadd -r aiholey && useradd -r -g aiholey -d /app aiholey \
-    && chown -R aiholey:aiholey /app
-USER aiholey
+    && chown -R aiholey:aiholey /app \
+    && chmod +x docker-entrypoint.sh
 
 EXPOSE 8787
 
 # slim 镜像没有 curl，用 python 做健康检查
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/api/health',timeout=4).status==200 else 1)"
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # --no-server-header：关掉 uvicorn 自带的 Server 头（中间件已统一覆写为 aiholey）
 CMD ["python", "-m", "uvicorn", "backend.main:app", \
