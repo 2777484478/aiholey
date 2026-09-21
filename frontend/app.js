@@ -426,13 +426,17 @@ function confirmDialog(opts = {}) {
   });
 }
 
-function openDrawer({ title, sub, body }) {
+function openDrawer({ title, sub, body, tag }) {
+  // tag 标识抽屉当前内容的归属（如 log:<runId>）。带轮询的视图每次刷新都带着自己的
+  // tag，轮询前检查 tag 与可见性——用户关掉抽屉、或抽屉被别的内容接管后，轮询必须
+  // 停止而不是把抽屉重新拉开（2026-09-21 修复：日志抽屉关不掉的 bug）。
+  state.drawerTag = tag || null;
   $('#drawerTitle').textContent = title;
   $('#drawerSub').textContent = sub || '';
   $('#drawerBody').innerHTML = body;
   $('#drawerMask').hidden = false;
 }
-const closeDrawer = () => { $('#drawerMask').hidden = true; };
+const closeDrawer = () => { state.drawerTag = null; $('#drawerMask').hidden = true; };
 
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeDrawer(); }
@@ -849,10 +853,14 @@ async function showTaskLogs(taskId) {
 }
 
 async function showRunLogs(runId) {
-  openDrawer({ title: '审计日志', sub: runId, body: '<div class="muted">加载中…</div>' });
+  const tag = 'log:' + runId;
+  openDrawer({ title: '审计日志', sub: runId, body: '<div class="muted">加载中…</div>', tag });
+  const alive = () => state.drawerTag === tag && !$('#drawerMask').hidden;
   const tick = async () => {
+    if (!alive()) return 'closed';
     try {
       const [logs, run] = await Promise.all([api(`/runs/${runId}/logs`), api(`/runs/${runId}`)]);
+      if (!alive()) return 'closed';  // 请求往返期间用户可能已关闭抽屉
       const items = logs.items || [];
       const html = items.length ? items.map(l => `
         <div class="ln ${l.level === 'error' ? 'error' : l.level === 'warn' ? 'warn' : l.level === 'ok' ? 'ok' : 'info'}">
@@ -862,6 +870,7 @@ async function showRunLogs(runId) {
       openDrawer({
         title: `审计日志 · ${STATUS[run.status] || run.status}`,
         sub: run.run_id,
+        tag,
         body: `<div class="progress-wrap"><div class="progress"><i style="width:${run.progress || 0}%"></i></div>
           <span>${run.progress || 0}%</span></div>
           <div class="hintline" style="margin-bottom:11px">当前阶段：${esc(run.stage || '-')}　${esc(run.message || '')}</div>
@@ -874,6 +883,7 @@ async function showRunLogs(runId) {
   };
   let last = await tick();
   const t = setInterval(async () => {
+    if (!alive()) { clearInterval(t); return; }
     last = await tick();
     if (!['queued', 'running'].includes(last)) clearInterval(t);
   }, 2500);
