@@ -22,7 +22,8 @@
 - [界面预览](#界面预览)
 - [功能特性](#功能特性)
 - [安装与部署](#安装与部署)
-  - [Docker 一键部署（推荐）](#docker-一键部署推荐)
+  - [镜像一键部署（推荐 · amd64 Linux）](#镜像一键部署推荐--amd64-linux)
+  - [编译部署（源码构建 · 任意架构）](#编译部署源码构建--任意架构)
   - [环境要求](#环境要求)
   - [本地开发（不用 Docker）](#本地开发不用-docker)
 - [AI 引擎配置（可选）](#ai-引擎配置可选)
@@ -97,7 +98,65 @@
 
 ## 安装与部署
 
-### Docker 一键部署（推荐）
+### 镜像一键部署（推荐 · amd64 Linux）
+
+不需要 clone 代码，直接拉取预构建镜像，三条命令搞定：
+
+```bash
+# 1. 拉取镜像（linux/amd64）
+docker pull paolagaren1/aiholey:latest
+
+# 2. 创建数据卷（数据库 / 报告 / JWT 密钥，删容器不丢数据）
+docker volume create aiholey-data
+
+# 3. 启动
+docker run -d --name aiholey \
+  -p 8787:8787 \
+  -v aiholey-data:/app/data \
+  --restart unless-stopped \
+  paolagaren1/aiholey:latest
+```
+
+等 `docker ps` 的 STATUS 变成 **(healthy)**（约 15~30 秒），打开
+**<http://服务器IP:8787>** → 默认账号 **admin / admin123**
+（首次登录后请立即到「系统与账户」修改密码）。
+
+> 防火墙记得放行 8787 端口（CentOS：`firewall-cmd --add-port=8787/tcp --permanent && firewall-cmd --reload`；
+> 云服务器另需放行安全组）。
+
+常用命令：
+
+```bash
+docker logs -f aiholey          # 看日志
+docker restart aiholey          # 重启
+docker rm -f aiholey            # 删除容器（数据保留在 aiholey-data 卷里）
+
+# 升级版本（数据不丢）
+docker pull paolagaren1/aiholey:latest
+docker rm -f aiholey
+# 再执行一遍上面的 docker run
+```
+
+自定义：
+
+```bash
+# 换端口（例：9000）
+docker run -d --name aiholey -p 9000:8787 -v aiholey-data:/app/data \
+  --restart unless-stopped paolagaren1/aiholey:latest
+
+# 首次初始化的管理员账号（仅空库初始化时生效）
+docker run -d ... -e AIHOLEY_USER=myadmin -e AIHOLEY_PASSWORD='强密码' \
+  paolagaren1/aiholey:latest
+
+# 想直接看到数据文件：用 bind mount 替代命名卷
+docker run -d --name aiholey -p 8787:8787 -v /opt/aiholey-data:/app/data \
+  --restart unless-stopped paolagaren1/aiholey:latest
+```
+
+> **ARM 机器（Apple Silicon / ARM 服务器）**：预构建镜像目前只提供 amd64，
+> ARM 环境请用下面的编译部署，在本机构建原生镜像。
+
+### 编译部署（源码构建 · 任意架构）
 
 ```bash
 git clone https://github.com/2777484478/aiholey.git
@@ -148,14 +207,14 @@ BASE_IMAGE=python:3.13-slim PIP_INDEX_URL=https://pypi.org/simple docker compose
 
 ### 环境要求
 
-| 依赖 | 版本要求 |
-| --- | --- |
-| Docker Engine | **≥ 20.10**（需含 BuildKit，`docker build` 默认走 BuildKit） |
-| Docker Compose | **v2**（`docker compose` 子命令；Docker Desktop 自带，Linux 装 `docker-compose-plugin`） |
-| Docker Desktop（Mac/Windows） | ≥ 4.0，Apple Silicon（arm64）与 Intel（amd64）均可 |
-| Linux 发行版 | 任意能跑上述 Docker 版本的发行版（Ubuntu 20.04+ / Debian 11+ / CentOS 7+ 等实测均可） |
-| 架构 | `linux/amd64`、`linux/arm64`（基础镜像 `python:3.13-slim` 双架构） |
-| 资源 | 内存 ≥ 512MB，磁盘 ≥ 1GB（镜像约 260MB + 数据） |
+| 依赖 | 镜像一键部署 | 编译部署 |
+| --- | --- | --- |
+| Docker Engine | **≥ 20.10** | **≥ 20.10**（需含 BuildKit） |
+| Docker Compose | 不需要 | **v2**（`docker compose` 子命令，Linux 装 `docker-compose-plugin`） |
+| 架构 | `linux/amd64` | `linux/amd64`、`linux/arm64` 均可（本机构建原生镜像） |
+| Linux 发行版 | 任意能跑上述 Docker 的发行版（Ubuntu 20.04+ / Debian 11+ / CentOS 7+ 等实测均可） | 同左 |
+| Docker Desktop（Mac/Windows） | —— | ≥ 4.0，Apple Silicon（arm64）与 Intel（amd64）均可 |
+| 资源 | 内存 ≥ 512MB，磁盘 ≥ 1GB（镜像约 260MB + 数据） | 同左 |
 
 ### 本地开发（不用 Docker）
 
@@ -308,11 +367,12 @@ docker compose down && rm -rf docker-data && ./docker-deploy.sh
 macOS Docker Desktop 经 virtiofs 抹平了权限所以测不出来。
 
 **2026-09-21 之后的镜像已通过入口脚本自动修复**（root 起入口 → 修正属主 → 降权运行），
-拉最新代码重新构建即可：
+拉最新预构建镜像或重新构建即可：
 
 ```bash
-git pull
-./docker-deploy.sh --rebuild
+docker pull paolagaren1/aiholey:latest      # 镜像部署方式
+# 或源码构建方式：
+git pull && ./docker-deploy.sh --rebuild
 ```
 </details>
 
