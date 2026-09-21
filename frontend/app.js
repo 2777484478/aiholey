@@ -1659,7 +1659,11 @@ async function renderEngines() {
     try {
       const r = await api(`/engines/${n}/test`, { method: 'POST', body: {
         api_key: $(`[data-k="${n}"]`).value, model: $(`[data-m="${n}"]`).value, base_url: $(`[data-b="${n}"]`).value } });
-      out.innerHTML = r.ok ? `<span style="color:#c6f57e">✓ ${esc(r.message)}</span>` : `<span style="color:#ff9fae">✗ ${esc(r.message)}</span>`;
+      // 后端测试是发 ping 让模型回 pong，r.message 是模型原文（通常就是 "pong"），
+      // 直接显示用户看不懂，包一层语义：成功以「连接成功」为主，模型原文作附注。
+      out.innerHTML = r.ok
+        ? `<span style="color:#c6f57e">✓ 连接成功<span style="opacity:.65">（模型响应：${esc(r.message) || 'OK'}）</span></span>`
+        : `<span style="color:#ff9fae">✗ 连接失败：${esc(r.message)}</span>`;
     } catch (e) { out.innerHTML = `<span style="color:#ff9fae">✗ ${esc(e.message)}</span>`; }
   });
   $$('[data-default]').forEach(b => b.onclick = async () => {
@@ -1909,8 +1913,8 @@ async function boot() {
 
   $('#modalClose').onclick = closeModal;
   $('#drawerClose').onclick = closeDrawer;
-  $('#modalMask').onclick = e => { if (e.target.id === 'modalMask') closeModal(); };
-  $('#drawerMask').onclick = e => { if (e.target.id === 'drawerMask') closeDrawer(); };
+  // 刻意不给遮罩绑关闭：弹窗/抽屉只能点 ✕ 或「取消/关闭」按钮退出。
+  // 之前点遮罩即关，表单填到一半误点外面就全丢，属于高频误操作。
 
   window.addEventListener('resize', () => {
     if (currentView === 'dashboard') renderDashboard().catch(() => { });
