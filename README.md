@@ -288,23 +288,39 @@ SSRF 看「HTTP 客户端有没有真的发出请求」，而不是源码里有�
 这个词。反例：早期 `path-traversal` 用 `\.\.[/\\]` 直接匹配，在一个 Angular
 仓库里刷出 805 条误报、占报告 90%，把真问题全淹了。
 
-规则支持四类上下文约束来压误报：
+规则支持六类上下文约束来压误报：
 
 | 约束 | 作用 | 例子 |
 | --- | --- | --- |
-| `line_require` | 本行还须再命中其一 | 路径穿越要求同行出现 `request.` / `params` 等外部输入 |
-| `line_exclude` | 本行命中任一即放过 | 排除 `path.contains("../")` 这类校验代码 |
-| `file_exclude_patterns` | 该文件跳过本规则 | 排除构建配置与常量定义 |
+| `line_require` | 本行还须再命中其一 | 路径穿越要求同行出现 `request.` / `@RequestParam` 等外部输入 |
+| `line_exclude` | 本行命中任一即放过 | 排除 `path.contains("../")` 这类校验代码、日志行 |
+| `context_require` | 「本行 + 下一行」拼成窗口再匹配 | 私钥块要求标记行之后真有 base64 正文，而不是文档在描述密钥格式 |
+| `file_contains` | 整个文件含该特征才评判 | `EXTERNAL_INPUT_HINTS`：只有真的会收到外部输入的文件才评判路径穿越 / SSRF |
+| `severity_downgrade` | 命中则严重度降一级 | `"Select * From " + tableName` 拼的是表名（无法用占位符绑定），critical 降 high |
 | `skip_tests` | 跳过测试文件 | 排除 spec/test 里的夹具数据（**凭证类规则不跳过**） |
+
+两条最容易被忽略的原则：
+
+- **变量名不是污点源**。`ioutil.ReadFile(filePath)` 里的 `filePath`、统一 HTTP 封装类里
+  的 `url` 参数，都只是名字恰好叫这个——拿它们当证据会把工具函数整片报成漏洞。
+  正则看不到跨行数据流，所以补一层**文件级**判据：这个文件接不接外部输入。
+- **命令行参数不算信任边界**。CLI 的 `argv` 由调用者自己控制，调用者本来就能读那个文件，
+  把它算成外部输入只会让「工具程序读自己写死的路径」变成路径穿越。
 
 改规则必须配回归测试（正例：真实漏洞形态必须命中；反例：历史误报样本必须不命中）：
 
 ```bash
-.venv/bin/python -m unittest backend.tests.test_rules -v
+.venv/bin/python -m unittest discover -s backend/tests -t . -v
 ```
 
 只收紧不加反例等于没有回归——**误报看得见（条数异常），漏报看不见（报告说"没发现"）**，
-所以每次改判据都要双向验证。
+所以每次改判据都要双向验证。同理，**放宽也要验证**：一次误报治理顺手扩大 SSRF 模式，
+命中数从 5 涨到 15，就是一个只看收紧方向的反例。
+
+AI 层是另一类问题：它不是匹配错字符串，而是**基于看不到的代码做保守推断**并给出 critical
+（「若 utils.ts 中 encrypt 使用固定密钥，则…」）。提示词里设了证据门槛，代码里再做一层
+确定性兜底——命中假设式措辞（可能 / 若 / 未给出实现 / 无法确认）就降一级、置信度压到 low。
+每条命中的 `confidence` 会写进报告：`high` 是可见代码直接佐证，`low` 是「需要人工确认的线索」。
 
 ---
 
@@ -336,7 +352,7 @@ aiholey/
 │   │   ├── jwt_util.py       零依赖 HS256 实现（固定算法、强制 exp/iss/aud/typ）
 │   │   └── webscan/          Web 漏扫：端口扫描 + 27 个探测工具 + AI 规划
 │   ├── routers/              auth / 配置 / 任务 / 报告 / 漏扫 API
-│   └── tests/                规则回归测试（正例必须命中 / 反例必须不命中）
+│   └── tests/                回归测试：规则（正例必须命中 / 反例必须不命中）+ AI 结论校准
 ├── frontend/                 零依赖原生前端（HTML/CSS/JS，无构建步骤）
 ├── examples/                 示例仓库（demo-repo.git + demo-vuln），内置体验用
 ├── docs/                     界面截图

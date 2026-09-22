@@ -312,6 +312,9 @@ input[type=checkbox]{accent-color:var(--cyan);cursor:pointer}
 .skill-card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:11px;gap:8px}
 .chip{font-size:10.6px;padding:2.5px 8px;border-radius:20px;background:rgba(139,92,246,.14);
   color:#cbb8ff;border:1px solid rgba(139,92,246,.26)}
+/* 置信度：low=只凭命中形态判定（跨行数据流看不到），需人工确认；high=可见代码直接佐证 */
+.chip-conf-low{background:rgba(148,163,184,.13);color:#93a1b5;border-color:rgba(148,163,184,.26)}
+.chip-conf-high{background:rgba(34,211,238,.13);color:#7ee0f2;border-color:rgba(34,211,238,.26)}
 .mini-btns{display:flex;gap:6px;align-items:center}
 
 /* ---------- 进度 / 日志 ---------- */

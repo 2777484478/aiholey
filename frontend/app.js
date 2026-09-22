@@ -177,6 +177,13 @@ function fmtDur(ms) {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 const SEV = { critical: '严重', high: '高危', medium: '中危', low: '低危' };
+// 置信度徽标：只标 low / high 两端，medium 不标（否则每条都挂个标签等于没信息）。
+// low 的含义是「这条只凭命中形态判定，跨行数据流看不到，需要人工确认」——
+// 复核时可以先跳过它。
+const CONF_CHIP = {
+  low: '<span class="chip chip-conf-low" title="低置信：仅凭命中形态判定（跨行数据流不可见），建议人工确认后再处置">低置信</span>',
+  high: '<span class="chip chip-conf-high" title="高置信：结论由可见代码直接佐证">高置信</span>',
+};
 const STATUS = { pending: '待执行', queued: '排队中', running: '运行中', success: '完成', failed: '失败', stopped: '已停止' };
 const RUN_LABEL = { pending: '待执行', queued: '排队中', running: '运行中', success: '成功', failed: '失败', stopped: '已停止' };
 const sbadge = s => `<span class="badge ${s}">${STATUS[s] || s}</span>`;
@@ -1086,6 +1093,7 @@ async function showReport(runId) {
         <span class="badge ${f.severity}">${SEV[f.severity] || f.severity}</span>
         <b>${esc(f.title)}</b>
         <span class="chip">${esc(f.skill)}</span>
+        ${CONF_CHIP[f.confidence] || ''}
         <span class="muted">${f.source === 'ai' ? 'AI 分析' : '内置规则'}</span>
       </div>
       <div class="loc">${esc(f.file)}:${f.line}</div>

@@ -108,7 +108,9 @@ def rule_scan(files: list[Path], root: Path) -> list[dict]:
                 "snippet": hit["snippet"][:300],
                 "detail": f"内置规则 {rid} 在 {rel}:{hit['line']} 命中模式：{hit.get('matched', '')}",
                 "advice": hit["advice"],
-                "confidence": "medium",
+                # 置信度由规则自己声明（rules.py 里 confidence 字段）：
+                # 结构性证据（私钥块 / AKIA 密钥）high，只凭 sink 形态的（ssrf / 路径穿越）low。
+                "confidence": hit.get("confidence", "medium"),
             })
     return findings
 
@@ -121,6 +123,17 @@ SYS_PROMPT = """你是一名资深代码安全审计专家，正在对一份真�
 2. 严格按给定的审计维度（技能清单）归类，每条漏洞必须归属到其中一个技能名。
 3. 必须给出精确的文件路径与行号，代码片段要能对应到真实代码。
 4. 宁可少报也不要臆造：如果某个维度在给定代码里没有发现问题，就不要编造。
+5. **证据门槛（最重要）**：每条结论都必须由「你在本次给定代码里真的看到的行」支撑。
+   不允许基于「未展示的实现」「别的文件里可能存在的代码」推断漏洞：
+   · 只看到调用、看不到被调函数内部实现时，不要报；确有必要时降到 low，
+     并在 detail 里写明「需人工确认：xxx 的实现未在本次代码中」；
+   · 标题或 detail 里出现「可能 / 若 / 假设 / 推测 / 未给出 / 无法确认」时，
+     severity 不得高于 medium，confidence 必须是 low。
+6. **严重度校准**：critical 只给「能看到明确攻击路径」的问题。以下都**不是**漏洞，不要报：
+   · 公钥 / 公开证书（PUBLIC_KEY 这类本来就要下发到前端的材料）；
+   · 静态、无参数拼接的 SQL（@Select 常量查询等）；
+   · 框架默认配置与产品设计取舍（固定 content-type、清除 Cookie 的工具函数、暴露时间戳）。
+7. confidence 反映证据强度：结论直接来自可见代码=high；需要推断=low。
 
 只输出 JSON 数组，不要任何解释文字。每个元素结构：
 {
@@ -136,6 +149,37 @@ SYS_PROMPT = """你是一名资深代码安全审计专家，正在对一份真�
   "confidence": "high|medium|low"
 }
 没有任何发现时输出 []。"""
+
+
+# AI 结论里的「假设式措辞」——出现这些词，说明结论的证据**不在它看到的代码里**：
+#   「若 utils.ts 中 encrypt 使用固定密钥，则存在硬编码密钥风险」（实现根本没给）
+#   「虽然当前代码未直接使用 SpEL，但 …可能触发表达式求值」
+# 这类结论在历史数据里占 AI 命中的八成，却照样拿 critical/high，把报告的可信度拖垮。
+# 提示词已经要求模型自己校准，但模型不总是听话，所以这里再做一次**确定性**兜底。
+_HEDGE_RE = re.compile(
+    r"(可能|也许|推测|假定|假设|疑似|潜在|若|未展示|未给出|未提供|未在代码中|"
+    r"无法确认|需人工确认|待确认|应该会|大概|不排除)"
+)
+
+# 每个 AI 维度命名（技能）不合规时兜底归类
+_DEFAULT_SKILL = "security-scan-base"
+
+
+def _calibrate_ai(sev: str, conf: str, *texts: str) -> tuple[str, str]:
+    """按「证据是否可见」校准 AI 结论的严重度与置信度。
+
+    命中假设式措辞时**只降一级**（critical→high、high→medium），并把 confidence
+    压到 low —— 不直接丢弃结论（它仍可能是线索），但明确标成「需人工确认」，
+    报告里按置信度一筛就能把这类拿掉。
+    """
+    blob = " ".join(t for t in texts if t)
+    if not _HEDGE_RE.search(blob):
+        return sev, conf
+    if sev == "critical":
+        sev = "high"
+    elif sev == "high":
+        sev = "medium"
+    return sev, "low"
 
 
 def _build_dimensions(skills: list[dict]) -> str:
@@ -333,18 +377,24 @@ def ai_scan(files: list[Path], root: Path, skills: list[dict], client: LLMClient
                 line = int(item.get("line") or 0)
             except (TypeError, ValueError):
                 line = 0
+            title = str(item.get("title") or "未命名问题")[:160]
+            detail = str(item.get("detail") or "")[:1500]
+            # 假设式结论降级：模型对看不到的代码做保守推断时会写「可能/若/未给出实现」，
+            # 这类结论不该占着 critical。
+            sev, confidence = _calibrate_ai(
+                sev, str(item.get("confidence") or "medium")[:10], title, detail)
             findings.append({
-                "skill": str(item.get("skill") or "security-scan-base").strip(),
+                "skill": str(item.get("skill") or _DEFAULT_SKILL).strip(),
                 "source": "ai",
                 "severity": sev,
                 "category": str(item.get("category") or "未分类")[:60],
-                "title": str(item.get("title") or "未命名问题")[:160],
+                "title": title,
                 "file": str(item.get("file") or "")[:300],
                 "line": line,
                 "snippet": str(item.get("snippet") or "")[:300],
-                "detail": str(item.get("detail") or "")[:1500],
+                "detail": detail,
                 "advice": str(item.get("advice") or "")[:600],
-                "confidence": str(item.get("confidence") or "medium")[:10],
+                "confidence": confidence,
             })
     return findings, notes
 
